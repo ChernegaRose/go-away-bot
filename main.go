@@ -105,7 +105,7 @@ func main() {
 				panic(err)
 			}
 		} else if update.CallbackQuery != nil {
-			if checkFollowerByChatName(bot, update.CallbackQuery.From.ID, "gl1ch") {
+			if checkFollowerByChatName(bot, update.CallbackQuery.From.ID, settings.name) {
 				if _, ok := members[update.CallbackQuery.From.ID]; ok {
 					callback := tgbotapi.NewCallbackWithAlert(update.CallbackQuery.ID, "Вы уже участвуете")
 					if _, err := bot.Request(callback); err != nil {
@@ -117,11 +117,17 @@ func main() {
 					if err != nil {
 						panic(err)
 					}
+					name := update.CallbackQuery.From.FirstName + " " + update.CallbackQuery.From.LastName
+					if update.CallbackQuery.From.UserName != "" {
+						name += " @" + update.CallbackQuery.From.UserName
+					}
 					m := Member{
-						id:   update.CallbackQuery.From.ID,
-						from: msg.From,
-						date: time.Now().UTC().Format("2006.01.02 15:04:05"),
-						post: msg.Post,
+						id:     update.CallbackQuery.From.ID,
+						from:   msg.From,
+						date:   time.Now().UTC().Format("2006.01.02 15:04:05"),
+						post:   msg.Post,
+						name:   name,
+						inline: msg.Query,
 					}
 					err = members.insert(db, m)
 					if err != nil {

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="admin@172.22.242.77:8022" type="ssh/sftp" uuid="7c021b4a-31d1-4d04-a5b3-c40cc53bbab2">
+        <config>
+          <option name="projectRootOnTarget" value="/data/data/com.termux/files/home/go-away-bot" />
+          <option name="serverName" value="admin@172.22.242.77:8022 agent" />
+        </config>
+        <ContributedStateBase type="GoLanguageRuntime">
+          <config>
+            <option name="goPath" value="/data/data/com.termux/files/home/go" />
+            <option name="goRoot" value="/data/data/com.termux/files/usr/bin/go" />
+            <option name="goVersion" value="go1.18.2 android/arm64" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

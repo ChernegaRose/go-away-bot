@@ -11,8 +11,9 @@ func pictureAsHtmlLink(link string) string {
 
 func articlePrivate(id string, from int64) interface{} {
 	marshal, err := json.Marshal(XMessage{
-		From: from,
-		Post: "friend",
+		From:  from,
+		Post:  "friend",
+		Query: id,
 	})
 	if err != nil {
 		return nil
@@ -37,8 +38,9 @@ func articlePrivate(id string, from int64) interface{} {
 
 func articleChat(id string, from int64) interface{} {
 	marshal, err := json.Marshal(XMessage{
-		From: from,
-		Post: "chat",
+		From:  from,
+		Post:  "chat",
+		Query: id,
 	})
 	if err != nil {
 		return nil
@@ -63,8 +65,9 @@ func articleChat(id string, from int64) interface{} {
 
 func articleChannel(id string, from int64) interface{} {
 	marshal, err := json.Marshal(XMessage{
-		From: from,
-		Post: "channel",
+		From:  from,
+		Post:  "channel",
+		Query: id,
 	})
 	if err != nil {
 		return nil
@@ -89,7 +92,8 @@ func articleChannel(id string, from int64) interface{} {
 
 func adminPost(id string, photo string) interface{} {
 	marshal, err := json.Marshal(XMessage{
-		Post: "public",
+		Post:  "post",
+		Query: "chernegarose",
 	})
 	if err != nil {
 		return nil

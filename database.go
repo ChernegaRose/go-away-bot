@@ -5,21 +5,25 @@ import (
 )
 
 type XMessage struct {
-	From int64  `json:"from,omitempty"`
-	Post string `json:"post,omitempty"`
+	From  int64  `json:"from,omitempty"`
+	Post  string `json:"post,omitempty"`
+	Query string `json:"query,omitempty"`
 }
 
 type Settings struct {
 	admin   int64
 	token   string
 	channel int64
+	name    string
 }
 
 type Member struct {
-	id   int64
-	from int64
-	date string
-	post string
+	id     int64
+	from   int64
+	date   string
+	post   string
+	name   string
+	inline string
 }
 
 type Members map[int64]Member
@@ -34,16 +38,19 @@ type InlineQuery struct {
 type InlineQueries map[string]InlineQuery
 
 func (s *Settings) load(db *sql.DB) error {
-	return db.QueryRow(`SELECT admin, token, channel FROM settings`).Scan(&s.admin, &s.token, &s.channel)
+	return db.QueryRow(`SELECT admin, token, channel, name FROM settings`).
+		Scan(&s.admin, &s.token, &s.channel, &s.name)
 }
 
 func (s *Settings) save(db *sql.DB) error {
-	_, err := db.Exec(`UPDATE settings SET admin=?, token=?, channel=?`, s.admin, s.token, s.channel)
+	_, err := db.Exec(`UPDATE settings SET admin=?, token=?, channel=?, name=?`,
+		s.admin, s.token, s.channel, s.name)
 	return err
 }
 
 func (m *Members) insert(db *sql.DB, mb Member) error {
-	_, err := db.Exec(`INSERT INTO member (id, invited, ts, post) VALUES (?, ?, ?, ?)`, mb.id, mb.from, mb.date, mb.post)
+	_, err := db.Exec(`INSERT INTO member (id, invited, ts, post, name, inline) VALUES (?, ?, ?, ?, ?, ?)`,
+		mb.id, mb.from, mb.date, mb.post, mb.name, mb.inline)
 	(*m)[mb.id] = mb
 	return err
 }
@@ -61,14 +68,14 @@ func (m *Members) removeID(db *sql.DB, id int64) error {
 }
 
 func (m *Members) load(db *sql.DB) error {
-	rows, err := db.Query(`SELECT id, invited, ts, post FROM member`)
+	rows, err := db.Query(`SELECT id, invited, ts, post, name, inline FROM member`)
 	if err != nil {
 		return err
 	}
 
 	for rows.Next() {
 		p := Member{}
-		err := rows.Scan(&p.id, &p.from, &p.date, &p.post)
+		err := rows.Scan(&p.id, &p.from, &p.date, &p.post, &p.name, &p.inline)
 		if err != nil {
 			return err
 		}

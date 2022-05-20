@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="9bb7348c-237c-45c7-b1d4-dbac49c0bd97" name="phone">
+        <fileTransfer rootFolder="/data/data/com.termux/files/home" accessType="SFTP" host="172.22.242.77" port="8022" sshConfigId="a3972df6-0f70-47dd-84b4-74f5673e765b" sshConfig="admin@172.22.242.77:8022 agent" authAgent="true">
+          <advancedOptions>
+            <advancedOptions controlEncoding="utf-8" dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
