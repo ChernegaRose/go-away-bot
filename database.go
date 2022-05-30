@@ -132,30 +132,41 @@ func (ms *Messages) load(db *sql.DB) error {
 }
 
 type Creator struct {
-	CreatorID int64
-	UserName  string
-	Status    int
+	CreatorID    int64
+	UserName     string
+	Status       int
+	StateContest int64
+	StateField   string
 }
 
 type Creators map[int64]Creator
 
 func (cs *Creators) insert(db *sql.DB, c Creator) error {
-	_, err := db.Exec(`INSERT INTO creators (id, user_name, status) VALUES (?, ?, ?)`,
-		c.CreatorID, c.UserName, c.Status)
+	_, err := db.Exec(
+		`INSERT INTO creators (id, user_name, status, state_contest, state_field) VALUES (?, ?, ?, ?, ?)`,
+		c.CreatorID, c.UserName, c.Status, c.StateContest, c.StateField)
+	(*cs)[c.CreatorID] = c
+	return err
+}
+
+func (cs *Creators) update(db *sql.DB, c Creator) error {
+	_, err := db.Exec(
+		`UPDATE creators SET user_name=?, status=?, state_contest=?, state_field=? WHERE id=?`,
+		c.UserName, c.Status, c.StateContest, c.StateField, c.CreatorID)
 	(*cs)[c.CreatorID] = c
 	return err
 }
 
 func (cs *Creators) load(db *sql.DB) error {
 	*cs = make(Creators)
-	rows, err := db.Query(`SELECT id, user_name, status FROM creators`)
+	rows, err := db.Query(`SELECT id, user_name, status, state_contest, state_field FROM creators`)
 	if err != nil {
 		return err
 	}
 
 	for rows.Next() {
 		c := Creator{}
-		err := rows.Scan(&c.CreatorID, &c.UserName, &c.Status)
+		err := rows.Scan(&c.CreatorID, &c.UserName, &c.Status, &c.StateContest, &c.StateField)
 		if err != nil {
 			return err
 		}
@@ -182,10 +193,8 @@ func (ms *Members) insert(db *sql.DB, m Member) error {
 		m.UserID, m.UserName, m.UserLang, m.FromID, m.MessageID, m.ChatInstance, m.ContestID)
 	if (*ms)[m.ContestID] == nil {
 		(*ms)[m.ContestID] = make(map[int64]Member)
-		(*ms)[m.ContestID][m.UserID] = m
-	} else {
-		(*ms)[m.ContestID][m.UserID] = m
 	}
+	(*ms)[m.ContestID][m.UserID] = m
 	return err
 }
 
@@ -204,105 +213,144 @@ func (ms *Members) load(db *sql.DB) error {
 		}
 		if (*ms)[m.ContestID] == nil {
 			(*ms)[m.ContestID] = make(map[int64]Member)
-			(*ms)[m.ContestID][m.UserID] = m
-		} else {
-			(*ms)[m.ContestID][m.UserID] = m
 		}
+		(*ms)[m.ContestID][m.UserID] = m
 	}
 	return rows.Close()
 }
 
 type Post struct {
-	ContestID   int64
-	Type        string
-	Title       string
-	Message     string
-	Description string
-	Image       string
+	ContestID int64
+	Type      string
+	Message   string
+	Image     string
 }
 
 type Posts map[int64]map[string]Post //[contest][type]
 
 func (ps *Posts) insert(db *sql.DB, p Post) error {
 	_, err := db.Exec(
-		`INSERT INTO posts (contest_id, type, title, message, description, image) VALUES (?, ?, ?, ?, ?, ?)`,
-		p.ContestID, p.Type, p.Title, p.Message, p.Description, p.Image)
+		`INSERT INTO posts (contest_id, type, message, image) VALUES (?, ?, ?, ?)`,
+		p.ContestID, p.Type, p.Message, p.Image)
 	if (*ps)[p.ContestID] == nil {
 		(*ps)[p.ContestID] = make(map[string]Post)
-		(*ps)[p.ContestID][p.Type] = p
-	} else {
-		(*ps)[p.ContestID][p.Type] = p
 	}
+	(*ps)[p.ContestID][p.Type] = p
+	return err
+}
+
+func (ps *Posts) update(db *sql.DB, p Post) error {
+	_, err := db.Exec(
+		`UPDATE posts SET message=?, image=? WHERE contest_id=? AND type=?`,
+		p.Message, p.Image, p.ContestID, p.Type)
+	if (*ps)[p.ContestID] == nil {
+		(*ps)[p.ContestID] = make(map[string]Post)
+	}
+	(*ps)[p.ContestID][p.Type] = p
 	return err
 }
 
 func (ps *Posts) load(db *sql.DB) error {
 	*ps = make(Posts)
-	rows, err := db.Query(`SELECT contest_id, type, title, message, description, image FROM posts`)
+	rows, err := db.Query(`SELECT contest_id, type, message, image FROM posts`)
 	if err != nil {
 		return err
 	}
 
 	for rows.Next() {
 		p := Post{}
-		err := rows.Scan(&p.ContestID, &p.Type, &p.Title, &p.Message, &p.Description, &p.Image)
+		err := rows.Scan(&p.ContestID, &p.Type, &p.Message, &p.Image)
 		if err != nil {
 			return err
 		}
 		if (*ps)[p.ContestID] == nil {
 			(*ps)[p.ContestID] = make(map[string]Post)
-			(*ps)[p.ContestID][p.Type] = p
-		} else {
-			(*ps)[p.ContestID][p.Type] = p
 		}
+		(*ps)[p.ContestID][p.Type] = p
 	}
 	return rows.Close()
 }
 
 type Contest struct {
-	ContestID     int64
-	CreatorID     int64
-	ContestName   string
-	ContestStart  string
-	ContestEnd    string
-	ContestActive int
-	Username      string
+	ContestID          int64
+	CreatorID          int64
+	ContestName        string
+	ContestStart       string
+	ContestEnd         string
+	ContestDescription string
+	ContestActive      int
+	Username           string
 }
 
-type Contests map[int64]Contest
+type Contests map[int64]map[int64]Contest //[user][contest]
 
-func (cs *Contests) insert(db *sql.DB, c Contest) error {
+func (cs *Contests) insert(db *sql.DB, c Contest) (int64, error) {
 	res, err := db.Exec(
-		`INSERT INTO contests (creator_id, contest_name, contest_start, contest_end, contest_active, username, timestamp) VALUES (?, ?, ?, ?, ?, ?, datetime())`,
-		c.CreatorID, c.ContestName, c.ContestStart, c.ContestEnd, c.ContestActive, c.Username)
+		`INSERT INTO contests (creator_id, contest_name, contest_start, contest_end, contest_description, contest_active, username, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, datetime())`,
+		c.CreatorID, c.ContestName, c.ContestStart, c.ContestEnd, c.ContestDescription, c.ContestActive, c.Username)
 	id, err := res.LastInsertId()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	c.ContestID = id
-	(*cs)[c.ContestID] = c
+	if (*cs)[c.CreatorID] == nil {
+		(*cs)[c.CreatorID] = make(map[int64]Contest)
+	}
+	(*cs)[c.CreatorID][c.ContestID] = c
+	if (*cs)[0] == nil {
+		(*cs)[0] = make(map[int64]Contest)
+	}
+	(*cs)[0][c.ContestID] = c
+	return id, err
+}
+
+func (cs *Contests) update(db *sql.DB, c Contest) error {
+	_, err := db.Exec(
+		`UPDATE contests SET creator_id=?, contest_name=?, contest_start=?, contest_end=?, contest_description=?, contest_active=?, username=? WHERE id=?`,
+		c.CreatorID, c.ContestName, c.ContestStart, c.ContestEnd, c.ContestDescription, c.ContestActive, c.Username, c.ContestID)
+	if (*cs)[c.CreatorID] == nil {
+		(*cs)[c.CreatorID] = make(map[int64]Contest)
+	}
+	(*cs)[c.CreatorID][c.ContestID] = c
+	if (*cs)[0] == nil {
+		(*cs)[0] = make(map[int64]Contest)
+	}
+	(*cs)[0][c.ContestID] = c
+	return err
+}
+
+func (cs *Contests) delete(db *sql.DB, c Contest) error {
+	_, err := db.Exec(`DELETE FROM contests WHERE id=?`, c.ContestID)
+	delete((*cs)[c.CreatorID], c.ContestID)
+	delete((*cs)[0], c.ContestID)
 	return err
 }
 
 func (cs *Contests) load(db *sql.DB) error {
 	*cs = make(Contests)
-	rows, err := db.Query(`SELECT id, creator_id, contest_name, contest_start, contest_end, contest_active, username FROM contests`)
+	(*cs)[0] = make(map[int64]Contest)
+	rows, err := db.Query(`SELECT id, creator_id, contest_name, contest_start, contest_end, contest_description, contest_active, username FROM contests`)
 	if err != nil {
 		return err
 	}
 
 	for rows.Next() {
 		c := Contest{}
-		err := rows.Scan(&c.ContestID, &c.CreatorID, &c.ContestName, &c.ContestStart, &c.ContestEnd, &c.ContestActive, &c.Username)
+		err := rows.Scan(&c.ContestID, &c.CreatorID, &c.ContestName, &c.ContestStart, &c.ContestEnd, &c.ContestDescription, &c.ContestActive, &c.Username)
 		if err != nil {
 			return err
 		}
-		(*cs)[c.ContestID] = c
+		if (*cs)[c.CreatorID] == nil {
+			(*cs)[c.CreatorID] = make(map[int64]Contest)
+		}
+		(*cs)[c.CreatorID][c.ContestID] = c
+		(*cs)[0][c.ContestID] = c
 	}
 	return rows.Close()
 }
 
-type Params struct {
-	From    int64 `json:"fr,omitempty"`
-	Contest int64 `json:"ct,omitempty"`
+type InlineData struct {
+	From    int64  `json:"f,omitempty"`
+	Contest int64  `json:"c,omitempty"`
+	State   string `json:"s,omitempty"`
 }

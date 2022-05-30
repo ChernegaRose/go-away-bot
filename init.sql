@@ -33,14 +33,15 @@ CREATE TABLE IF NOT EXISTS 'members'
 
 CREATE TABLE IF NOT EXISTS 'contests'
 (
-    'id'             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    'creator_id'     INTEGER NOT NULL,
-    'contest_name'   TEXT    NOT NULL,
-    'contest_start'  TEXT    NOT NULL,
-    'contest_end'    TEXT    NOT NULL,
-    'contest_active' INTEGER NOT NULL,
-    'username'       TEXT    NOT NULL,
-    'timestamp'      TEXT    NOT NULL
+    'id'                  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    'creator_id'          INTEGER NOT NULL,
+    'contest_name'        TEXT    NOT NULL,
+    'contest_start'       TEXT    NOT NULL,
+    'contest_end'         TEXT    NOT NULL,
+    'contest_description' TEXT    NOT NULL,
+    'contest_active'      INTEGER NOT NULL,
+    'username'            TEXT    NOT NULL,
+    'timestamp'           TEXT    NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS 'settings'
@@ -52,18 +53,18 @@ CREATE TABLE IF NOT EXISTS 'settings'
 
 CREATE TABLE IF NOT EXISTS 'creators'
 (
-    'id'        INTEGER NOT NULL PRIMARY KEY,
-    'user_name' TEXT    NOT NULL,
-    'status'    INTEGER NOT NULL DEFAULT 0
+    'id'            INTEGER NOT NULL PRIMARY KEY,
+    'user_name'     TEXT    NOT NULL,
+    'status'        INTEGER NOT NULL DEFAULT 0,
+    'state_contest' INTEGER NOT NULL,
+    'state_field'   TEXT    NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS 'posts'
 (
-    'contest_id'  INTEGER NOT NULL,
-    'type'        TEXT    NOT NULL,
-    'title'       TEXT    NOT NULL,
-    'message'     TEXT    NOT NULL,
-    'description' TEXT    NOT NULL,
-    'image'       TEXT    NOT NULL,
+    'contest_id' INTEGER NOT NULL,
+    'type'       TEXT    NOT NULL,
+    'message'    TEXT    NOT NULL,
+    'image'      TEXT    NOT NULL,
     UNIQUE ('contest_id', 'type')
 );
